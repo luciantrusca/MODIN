@@ -1,0 +1,37 @@
+# GLASSO (IBD fork of MONIKA)
+## Graphical LASSO Network Inference
+
+Forked from [MONIKA](https://github.com/marcellobarylli/MONIKA) (Multi-Omic Network Inference & Knockout Analysis) by Marcello Barylli, and renamed for this thesis since neither half of that name applies anymore: inference here runs with a zero prior matrix (no STRING priors), and the knockout/diffusion analysis (`network_diffusion.py`) was dropped in favor of a Random Walk with Restart implementation in `../pipeline/network_metrics.ipynb`. What remains is stability-based graphical LASSO network inference. See `../pipeline/` for the preprocessing and feature selection that produces the inputs this fork consumes, and the thesis Methodology section for the full method description. Licensed under Apache 2.0 (see `LICENSE`); original copyright retained.
+
+The upstream tool builds a formal multiplex network structure (via `pymnet`) with priors from the [STRING Database](https://string-db.org/) for gene-level CRC/glioma data. The IBD run (`src/run_ibd.py`) instead concatenates the MGX/MBX/RNA features into one matrix and infers a single joint network with a weighted graphical LASSO, using a zero prior matrix since its features are microbial species, metabolites, and transcripts rather than genes.
+
+This fork removes the original CRC/glioma pipeline (`omics_data_processing.py`, `network_inference.py`, `network_diffusion.py`, `src/hpc_scripts/`, and its CRC/glioma test data) as unused for this thesis and adds an IBD run over microbiome (MGX), metabolomics (MBX), and host transcriptomics (RNA) layers instead. See the [upstream repo](https://github.com/marcellobarylli/MONIKA) for the original CRC/glioma workflow, test data, and knockout/diffusion analysis.
+
+![Alt text](media/MONIKA_arrow.png)
+
+## Running the IBD analysis
+
+```
+cd GLASSO
+conda run -n monika python src/run_ibd.py
+```
+
+Runs stability-based graphical LASSO (`piglasso.py`) on the MGX/MBX/RNA layers prepared by `../pipeline/`, selects lambda via stability-curve knee detection (`estimate_lambdas.py`), and writes precision matrices, edge lists, and a combined graph to `results/ibd/`. See the docstring at the top of `src/run_ibd.py` for parameters.
+
+## Installation
+To make installation easy, it is recommended to use a [conda](https://www.anaconda.com/download) environment (miniconda or anaconda >= 24.9.1). 
+
+Once the repository is downloaded, edit the environment.yml file, change prefix to where you want to install the environment (at the bottom of the file, prefix: path/to/anaconda3/envs/monika)
+
+Then, simply run:
+
+conda env create -f environment.yml
+
+conda activate monika
+
+conda install -c conda-forge rpy2
+
+## Data
+`data/` contains the IBD inputs: `data/ibd_diagnosis_labels.csv` and the MGX/MBX/RNA files produced by `../pipeline/`.
+
+*Note: `src/run_ibd.py` may print R warnings on startup (e.g. "library contains no packages") — these are harmless; the program still runs fine.*
